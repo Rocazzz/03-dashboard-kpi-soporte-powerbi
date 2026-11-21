@@ -1,0 +1,63 @@
+// =====================================================================
+// Medidas DAX · Dashboard de KPIs de Mesa de Ayuda
+// Crear una tabla vacía "_Medidas" y pegar cada medida en ella.
+// Valores esperados (2025) en data/kpis_referencia.csv para validar.
+// =====================================================================
+
+Total Tickets =
+COUNTROWS ( fact_tickets )
+
+Tickets Cerrados =
+CALCULATE ( [Total Tickets], fact_tickets[estado] = "Cerrado" )
+
+Backlog =
+CALCULATE ( [Total Tickets], fact_tickets[estado] = "Abierto" )
+
+% Cumplimiento SLA =
+DIVIDE (
+    CALCULATE ( [Tickets Cerrados], fact_tickets[cumple_sla] = TRUE () ),
+    [Tickets Cerrados]
+)
+
+Tiempo Medio Resolucion (h) =
+AVERAGEX (
+    FILTER ( fact_tickets, fact_tickets[estado] = "Cerrado" ),
+    fact_tickets[horas_resolucion]
+)
+
+Mediana Primera Respuesta (min) =
+MEDIAN ( fact_tickets[minutos_primera_respuesta] )
+
+% FCR =
+DIVIDE (
+    CALCULATE ( [Total Tickets], fact_tickets[resuelto_primer_contacto] = TRUE () ),
+    [Total Tickets]
+)
+
+% Escalados =
+DIVIDE ( CALCULATE ( [Total Tickets], fact_tickets[escalado] = TRUE () ), [Total Tickets] )
+
+% CSAT =
+DIVIDE (
+    CALCULATE ( COUNT ( fact_tickets[csat] ), fact_tickets[csat] >= 4 ),
+    COUNT ( fact_tickets[csat] )
+)
+
+// ---------- Inteligencia de tiempo (requiere dim_fecha marcada como tabla de fechas) ----------
+Tickets Mes Anterior =
+CALCULATE ( [Total Tickets], DATEADD ( dim_fecha[fecha], -1, MONTH ) )
+
+Variacion % MoM =
+DIVIDE ( [Total Tickets] - [Tickets Mes Anterior], [Tickets Mes Anterior] )
+
+Tickets Acumulado Anio =
+TOTALYTD ( [Total Tickets], dim_fecha[fecha] )
+
+// ---------- Formato condicional ----------
+Color SLA =
+IF ( [% Cumplimiento SLA] >= 0.85, "#2E8B57", "#C0392B" )
+
+Estado vs Meta SLA =
+VAR meta = 0.85
+RETURN
+    IF ( [% Cumplimiento SLA] >= meta, "✔ En meta", "✖ Bajo meta (" & FORMAT ( meta - [% Cumplimiento SLA], "0.0%" ) & ")" )

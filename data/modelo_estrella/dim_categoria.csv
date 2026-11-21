@@ -1,0 +1,8 @@
+categoria_id,categoria,sla_horas,complejidad
+1,Acceso / contraseñas,4,1
+2,Sitio web caído,2,3
+3,Formularios web,8,2
+4,Correo corporativo,6,2
+5,Hardware,24,2
+6,Software / licencias,16,2
+7,Integraciones (Sheets/CRM),12,3
